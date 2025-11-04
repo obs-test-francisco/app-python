@@ -1,0 +1,217 @@
+[
+  {
+    "name": "otel-python-app",
+    "image": "${image_url}",
+    "cpu": 256,
+    "memory":  512,
+    "essential": true,
+    "repositoryCredentials": {
+      "credentialsParameter": "${dockerhub_secret}"
+    },
+    "mountPoints": [
+      {
+        "containerPath": "/opt/etc/observe-agent",
+        "readOnly": false,
+        "sourceVolume": "shared-config"
+      }
+    ],    
+    "portMappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080,
+        "protocol" : "tcp"
+      }
+    ],
+    "environment": [
+      {
+        "name": "FLASK_APP",
+        "value": "app"
+      },
+      {
+        "name": "FLASK_PORT",
+        "value": "8080"
+      },
+      {
+        "name": "MYSQL_PASSWORD",
+        "value": "password"
+      },
+      {
+        "name": "MYSQL_USER",
+        "value": "hackweek"
+      },
+      {
+        "name": "MYSQL_DATABASE",
+        "value": "hackweek"
+      },
+      {
+        "name": "MYSQL_HOST",
+        "value": "127.0.0.1"
+      },
+      {
+        "name": "MYSQL_ROOT_PASSWORD",
+        "value": "password"
+      },
+      {
+        "name": "REDIS_URL",
+        "value": "redis://127.0.0.1:6379/0"
+      },
+      {
+        "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "value": "http://127.0.0.1:4318"
+      },
+      {
+        "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+        "value": "http/protobuf"
+      },
+      {
+        "name": "OTEL_TRACES_EXPORTER",
+        "value": "otlp"
+      },
+      {
+        "name": "OTEL_METRICS_EXPORTER",
+        "value": "otlp"
+      },
+      {
+        "name": "OTEL_NODE_RESOURCE_DETECTORS",
+        "value": "env,host,os,serviceinstance"
+      },
+      {
+        "name": "OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED",
+        "value": "true"
+      },
+      {
+        "name": "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
+        "value": "delta"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+          "awslogs-region": "us-west-2",
+          "awslogs-group": "/ecs/francisco-dev-cluster",
+          "awslogs-stream-prefix": "otel-python-app"
+      }
+    }
+  },
+  {
+    "name": "db-mysql",
+    "image": "mysql:8.0.44",
+    "cpu": 1024,
+    "memory":  2048,
+    "essential": false,
+    "command": ["--default-authentication-plugin=mysql_native_password"],
+    "repositoryCredentials": {
+      "credentialsParameter": "${dockerhub_secret}"
+    },
+    "portMappings": [
+      {
+        "containerPort": 3306,
+        "hostPort": 3306,
+        "protocol" : "tcp"
+      }
+    ],
+    "environment": [
+      {
+        "name": "MYSQL_PASSWORD",
+        "value": "password"
+      },
+      {
+        "name": "MYSQL_USER",
+        "value": "hackweek"
+      },
+      {
+        "name": "MYSQL_DATABASE",
+        "value": "hackweek"
+      },
+      {
+        "name": "MYSQL_HOST",
+        "value": "0.0.0.0"
+      },
+      {
+        "name": "MYSQL_ROOT_PASSWORD",
+        "value": "password"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+          "awslogs-region": "us-west-2",
+          "awslogs-group": "/ecs/francisco-dev-cluster",
+          "awslogs-stream-prefix": "mysql"
+      }
+    }
+  },
+  {
+    "name": "db-redis",
+    "image": "redis:6.2",
+    "cpu": 1024,
+    "memory":  2048,
+    "essential": false,
+    "repositoryCredentials": {
+      "credentialsParameter": "${dockerhub_secret}"
+    },
+    "portMappings": [
+      {
+        "containerPort": 6379,
+        "hostPort": 6379,
+        "protocol" : "tcp"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+          "awslogs-region": "us-west-2",
+          "awslogs-group": "/ecs/francisco-dev-cluster",
+          "awslogs-stream-prefix": "redis"
+      }
+    }
+  },
+  {
+    "name": "observe-agent",
+    "image": "observeinc/observe-agent:2.8.1",
+    "cpu": 512,
+    "memory":  1024,
+    "essential": false,
+    "repositoryCredentials": {
+      "credentialsParameter": "${dockerhub_secret}"
+    },
+    "mountPoints": [
+      {
+        "containerPath": "/etc/observe-agent/",
+        "readOnly": true,
+        "sourceVolume": "shared-config"
+      }
+    ],    
+    "secrets": [
+      {
+        "name": "OBSERVE_URL",
+        "value": "${observe_url_secret_arn}"
+      },
+      {
+        "name": "TOKEN",
+        "valueFrom": "${observe_token_secret_arn}"
+      }
+    ],
+    "portMappings": [
+      {
+        "containerPort": 4317,
+        "hostPort": 4317,
+        "protocol" : "tcp"
+      },
+      {
+        "containerPort": 4318,
+        "hostPort": 4318,
+        "protocol" : "tcp"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+          "awslogs-region": "us-west-2",
+          "awslogs-group": "/ecs/francisco-dev-cluster",
+          "awslogs-stream-prefix": "observe-agent"
+      }
+    }
+  }
+]
+  

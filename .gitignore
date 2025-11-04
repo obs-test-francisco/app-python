@@ -1,0 +1,9 @@
+/code/data/
+.terraform
+.terraform.tfstate
+.terraform.tfstate.backup
+.DS_Store
+*.pyc
+__pycache__
+*.env
+environments/field-demo-staging

@@ -1,0 +1,44 @@
+FROM python:3.10-slim
+
+#ARG GIT_SHA
+#ARG GIT_USER
+#
+#LABEL repo=frgray/otel-python-app \
+#    buildsha=${GIT_SHA} \
+#    username=${GIT_USER}
+
+SHELL ["/bin/bash", "-c"]
+
+USER root
+
+# Install build dependencies / Add ssh fingerprints for trusted hosts and set permissions
+RUN /usr/bin/apt update \
+    && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC /usr/bin/apt install -y redis libdbi1 libdbd-mysql libmysql++-dev  \
+    python3-mysqldb pkg-config gcc telnet iputils-ping netcat-traditional
+
+# Create web user / Create directories
+RUN /usr/sbin/useradd -r -d /opt/site -u 998 -s /bin/bash web -k /etc/skel -m -U \
+    && chown web:web -R /opt/site
+
+COPY ./docker/etc/ /opt/etc/
+
+USER web
+
+COPY --chown=web:web ./src/requirements.txt /opt/site/code/
+RUN /usr/local/bin/pip install -r /opt/site/code/requirements.txt
+
+COPY --chown=web:web ./bin/ /opt/site/bin/
+COPY --chown=web:web ./src/ /opt/site/code/
+
+USER root
+
+RUN chown web:web -R /opt/site \
+    && chmod +x /opt/site/bin/entrypoint.sh
+
+WORKDIR /opt/site
+
+USER web
+
+EXPOSE 5000 8080
+
+ENTRYPOINT ["/opt/site/bin/entrypoint.sh"]

@@ -1,0 +1,66 @@
+services:
+  otel-python-app:
+    image: obsfrancisco/otel-python-app:${APP_VERSION:-v0.33.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    env_file: docker/env-files/otel-python-app.env
+    # environment:
+    #   - FLASK_APP=app
+    #   - FLASK_PORT=8000
+    #   - MYSQL_HOST=db-mysql
+    #   - MYSQL_USER=hackweek
+    #   - MYSQL_PASSWORD=password
+    #   - MYSQL_DATABASE=hackweek
+    #   - REDIS_URL=redis://db-redis:6379/0
+    #   - OTEL_EXPORTER_OTLP_ENDPOINT=http://observe-agent:4318
+    #   - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    #   - OTEL_TRACES_EXPORTER=otlp
+    #   - OTEL_METRICS_EXPORTER=otlp
+    #   - OTEL_NODE_RESOURCE_DETECTORS=env,host,os,serviceinstance
+    #   - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+    #   - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
+    links:
+      - db-redis
+      - db-mysql
+      - observe-agent
+    ports:
+      - "8000:8000"
+
+  db-redis:
+    image: "redis:6.2-alpine"
+    platform: linux/amd64
+    ports:
+      - "6379:6379"
+
+  db-mysql:
+    image: mysql:8.0.44
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    env_file: docker/env-files/mysql.env
+    # environment:
+    #   - "MYSQL_PASSWORD=password"
+    #   - "MYSQL_USER=hackweek"
+    #   - "MYSQL_DATABASE=hackweek"
+    #   - "MYSQL_HOST=0.0.0.0"
+    #   - "MYSQL_ROOT_PASSWORD=password"
+    platform: linux/amd64
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  observe-agent:
+    image: observeinc/observe-agent:2.8.1
+    platform: linux/amd64
+    env_file: docker/env-files/observe-agent.env
+    # environment:
+    #   - "TOKEN=ds1fjupKXDleXyDrDcym:6dK0TvTWNUhYkjw8bEEv4y0ENEKvlT5l"
+    #   - "OBSERVE_URL=https://169096891327.collect.observeinc.com/"
+    ports: 
+      - "4317"
+      - "4318"
+    volumes:
+      - ./docker/etc/observe-agent/observe-agent.yaml:/etc/observe-agent/observe-agent.yaml

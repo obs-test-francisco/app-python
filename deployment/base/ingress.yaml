@@ -1,0 +1,22 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-otel-python-app
+  namespace: otel-python
+  annotations:
+    resource.opentelemetry.io/service.name: "otel-python-app"
+    resource.opentelemetry.io/service.namespace: "otel-python"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: otel-python-app.docker.local
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: otel-python-app
+              port:
+                number: 8080
