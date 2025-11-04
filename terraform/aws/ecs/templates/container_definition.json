@@ -185,11 +185,11 @@
     "secrets": [
       {
         "name": "OBSERVE_URL",
-        "value": "${observe_url_secret_arn}"
+        "valueFrom": "${observe_secret_arn}:${observe_url_key}::"
       },
       {
         "name": "TOKEN",
-        "valueFrom": "${observe_token_secret_arn}"
+        "valueFrom": "${observe_secret_arn}:${observe_token_key}::"      
       }
     ],
     "portMappings": [

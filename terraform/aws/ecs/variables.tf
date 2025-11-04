@@ -14,7 +14,7 @@ variable "secrets_manager_secrets" {
   type = map(string)
   default = {
     dockerhub = "ecr-pullthroughcache/dockerhub"
-    observe = "provider/observe/francisco-token"
+    observe   = "provider/observe/francisco-token"
   }
   description = "A map of Secrets Manager secret names for various secrets used by the application"
 }
