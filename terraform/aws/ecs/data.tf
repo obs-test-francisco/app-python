@@ -11,5 +11,5 @@ data "aws_secretsmanager_secret" "dockerhub" {
 }
 
 data "aws_secretsmanager_secret" "observe" {
-    name = var.secrets_manager_secrets.observe
+  name = var.secrets_manager_secrets.observe
 }

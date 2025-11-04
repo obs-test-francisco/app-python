@@ -101,25 +101,64 @@ resource "aws_iam_role_policy" "task_execution_passrole" {
   })
 }
 
+data "aws_iam_policy_document" "task_execution_secrets" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+    resources = [
+      data.aws_secretsmanager_secret.dockerhub.arn,
+      data.aws_secretsmanager_secret.observe.arn
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "kms:Decrypt"
+    ]
+    resources = [
+      "arn:aws:kms:us-west-2:590183861614:key/*"
+    ]
+  }
+}
+
 resource "aws_iam_role_policy" "task_execution_secrets" {
   name = "secrets-access"
   role = aws_iam_role.task_execution.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "kms:Decrypt"
-        ]
-        Resource = [
-          "arn:aws:kms:us-west-2:590183861614:key/*",
-          data.aws_secretsmanager_secret.dockerhub.arn,
-          data.aws_secretsmanager_secret.observe.arn
-        ]
-      }
-    ]
-  })
+  policy = data.aws_iam_policy_document.task_execution_secrets.json
+  # policy = jsonencode({
+  #   Version = "2012-10-17"
+  #   Statement = [
+  #     {
+  #       Effect = "Allow"
+  #       Action = [
+  #         "secretsmanager:GetSecretValue",
+  #         "ecr:GetAuthorizationToken",
+  #         "ecr:BatchCheckLayerAvailability",
+  #         "ecr:GetDownloadUrlForLayer",
+  #         "ecr:BatchGetImage",
+  #         "kms:Decrypt"
+  #       ]
+  #       Resource = [
+  #         "arn:aws:kms:us-west-2:590183861614:key/b9af2ed6-b543-4d22-902a-bb34d985cb28",
+  #         "arn:aws:ecr:us-west-2:590183861614:repository/*",
+  #         data.aws_secretsmanager_secret.dockerhub.arn,
+  #         data.aws_secretsmanager_secret.observe.arn
+  #       ]
+  #     }
+  #   ]
+  # })
 }

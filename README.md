@@ -33,7 +33,7 @@ The Terraform code expects the following AWS Secrets Manager secrets to be creat
 * var.secrets_manager_secrets.observe
   ```json
   {
-    "TOKEN": "your_observe_ingest_token"
+    "OBSERVE_TOKEN": "your_observe_ingest_token",
     "OBSERVE_URL": "https://<tenant_id>.collect.observeinc.com/"
   }
   ```
