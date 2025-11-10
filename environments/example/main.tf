@@ -16,5 +16,5 @@ module "app" {
   source = "../../../terraform/aws/ecs"
 
   image_url     = "obsfrancisco/otel-python-app"
-  image_version = "v0.34.0"
+  image_version = "v0.46.0"
 }

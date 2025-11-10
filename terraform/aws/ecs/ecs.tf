@@ -8,6 +8,6 @@ resource "aws_cloudwatch_log_group" "ecs_cluster" {
 
   tags = {
     Environment = "dev"
-    Application = "otel-python"
+    Application = var.image_name
   }
 }

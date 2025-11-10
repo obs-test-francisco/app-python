@@ -1,0 +1,45 @@
+{
+  "name": "observe-agent",
+  "image": "${image_url}",
+  "cpu": 512,
+  "memory":  1024,
+  "essential": false,
+  "mountPoints": [
+    {
+      "sourceVolume": "shared-config",
+      "containerPath": "/etc/observe-agent/",
+      "readOnly": false
+    },
+    {
+      "sourceVolume": "shared-logs",
+      "containerPath": "/mnt/shared/",
+      "readOnly": true
+    }
+  ], 
+  "dependsOn": [
+    {
+      "containerName": "init",
+      "condition": "SUCCESS"
+    }
+  ],
+  "portMappings": [
+    {
+      "containerPort": 4317,
+      "hostPort": 4317,
+      "protocol" : "tcp"
+    },
+    {
+      "containerPort": 4318,
+      "hostPort": 4318,
+      "protocol" : "tcp"
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+        "awslogs-region": "${awslogs_region}",
+        "awslogs-group": "${awslogs_group}",
+        "awslogs-stream-prefix": "observe-agent"
+    }
+  }
+}

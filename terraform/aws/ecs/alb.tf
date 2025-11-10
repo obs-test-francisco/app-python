@@ -1,5 +1,5 @@
 resource "aws_lb" "default" {
-  name               = "otel-python-alb"
+  name               = "${var.image_name}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -9,7 +9,7 @@ resource "aws_lb" "default" {
 
   tags = {
     Environment = "dev"
-    Application = "otel-python"
+    Application = var.image_name
   }
 }
 
@@ -25,7 +25,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_lb_target_group" "default" {
-  name                 = "otel-python-tg"
+  name                 = "${var.image_name}-tg"
   port                 = 8080
   protocol             = "HTTP"
   vpc_id               = module.vpc.vpc_id
@@ -46,7 +46,7 @@ resource "aws_lb_target_group" "default" {
 }
 
 resource "aws_security_group" "alb" {
-  name        = "otel-python-alb-sg"
+  name        = "${var.image_name}-alb-sg"
   description = "ALB Security Group"
   vpc_id      = module.vpc.vpc_id
 
@@ -65,6 +65,6 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "otel-python-alb-sg"
+    Name = "${var.image_name}-alb-sg"
   }
 }

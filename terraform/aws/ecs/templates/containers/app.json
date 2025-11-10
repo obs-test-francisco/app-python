@@ -1,0 +1,101 @@
+{
+  "name": "otel-python-app",
+  "image": "${image_url}",
+  "cpu": 256,
+  "memory":  512,
+  "essential": true,
+  "mountPoints": [
+    {
+      "sourceVolume": "shared-logs",
+      "containerPath": "/mnt/shared/",
+      "readOnly": false
+    }
+  ],    
+  "portMappings": [
+    {
+      "containerPort": 8080,
+      "hostPort": 8080,
+      "protocol" : "tcp"
+    }
+  ],
+  "dependsOn": [
+    {
+      "containerName": "init",
+      "condition": "SUCCESS"
+    }
+  ],
+  "environment": [
+    {
+      "name": "FLASK_APP",
+      "value": "app"
+    },
+    {
+      "name": "FLASK_PORT",
+      "value": "8080"
+    },
+    {
+      "name": "LOGS_DIR",
+      "value": "/mnt/shared/logs"
+    },
+    {
+      "name": "MYSQL_PASSWORD",
+      "value": "password"
+    },
+    {
+      "name": "MYSQL_USER",
+      "value": "hackweek"
+    },
+    {
+      "name": "MYSQL_DATABASE",
+      "value": "hackweek"
+    },
+    {
+      "name": "MYSQL_HOST",
+      "value": "127.0.0.1"
+    },
+    {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "value": "password"
+    },
+    {
+      "name": "REDIS_URL",
+      "value": "redis://127.0.0.1:6379/0"
+    },
+    {
+      "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "value": "http://127.0.0.1:4318"
+    },
+    {
+      "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+      "value": "http/protobuf"
+    },
+    {
+      "name": "OTEL_TRACES_EXPORTER",
+      "value": "otlp"
+    },
+    {
+      "name": "OTEL_METRICS_EXPORTER",
+      "value": "otlp"
+    },
+    {
+      "name": "OTEL_NODE_RESOURCE_DETECTORS",
+      "value": "env,host,os,serviceinstance"
+    },
+    {
+      "name": "OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED",
+      "value": "true"
+    },
+    {
+      "name": "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
+      "value": "delta"
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+        "awslogs-region": "${awslogs_region}",
+        "awslogs-group": "${awslogs_group}",
+        "awslogs-stream-prefix": "otel-python-app"
+    }
+  }
+}
