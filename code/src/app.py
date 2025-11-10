@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 
 from flask import Flask
 from logging.config import dictConfig
@@ -13,6 +14,9 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+
 from .lib.redis import redis_status, RedisClient
 from .lib.mysql import mysql_status, populate_initial_data
 from .lib.users import UserController
@@ -20,6 +24,7 @@ from .lib.util import serialize_users
 
 otel_service_name = os.environ.get("OTEL_SERVICE_NAME", "otel-python-app")
 otel_otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", None)
+logfile_dir = os.environ.get("LOGS_DIR", "/mnt/shared/logs")
 
 # Service name is required for most backends
 resource = Resource(attributes={
@@ -67,16 +72,22 @@ dictConfig({
             'class': 'logging.StreamHandler',
             'stream': 'ext://flask.logging.wsgi_errors_stream',
             'formatter': 'json_formatter'
-        }
+        },
+        "fileHandler": {
+            "class": "logging.FileHandler",
+            "formatter": "json_formatter",
+            "level": "INFO",
+            "filename": f'{logfile_dir}/app-log.json',
+        }        
     },
     'root': {
         'level': 'DEBUG',
-        'handlers': ['console']
+        'handlers': ['console', 'fileHandler']
     }
 })
 
 app = Flask(__name__)
-
+FlaskInstrumentor().instrument_app(app, excluded_urls="healthz")
 
 @app.route("/")
 def index() -> str:

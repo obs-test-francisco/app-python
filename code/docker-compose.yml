@@ -1,6 +1,6 @@
 services:
-  otel-python-app:
-    image: obsfrancisco/otel-python-app:${APP_VERSION:-v0.33.0}
+  app:
+    image: obsfrancisco/otel-python-app:${APP_VERSION}
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,16 +8,17 @@ services:
         - linux/amd64
         - linux/arm64
     env_file: docker/env-files/otel-python-app.env
-    links:
-      - db-redis
-      - db-mysql
-      - observe-agent
+    volumes:
+      - shared-logs:/mnt/shared/logs:rw
+    networks:
+      - backend
     ports:
       - "8000:8000"
 
   db-redis:
     image: "redis:6.2-alpine"
-    platform: linux/amd64
+    networks:
+      - backend
     ports:
       - "6379:6379"
 
@@ -25,18 +26,30 @@ services:
     image: mysql:8.0.44
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     env_file: docker/env-files/mysql.env
-    platform: linux/amd64
     volumes:
       - ./data/mysql:/var/lib/mysql
+    networks:
+      - backend
     ports:
       - "3306:3306"
 
   observe-agent:
-    image: observeinc/observe-agent:2.8.1
-    platform: linux/amd64
+    image: observeinc/observe-agent:2.9.1
     env_file: docker/env-files/observe-agent.env
+    networks:
+      - backend
     ports: 
-      - "4317"
-      - "4318"
+      - "14317:4317"
+      - "14318:4318"
     volumes:
-      - ./docker/etc/observe-agent/observe-agent.yaml:/etc/observe-agent/observe-agent.yaml
+      - ../util/observe-agent.yaml:/etc/observe-agent/observe-agent.yaml
+      - shared-logs:/mnt/shared/
+    depends_on: 
+      - app
+
+networks:
+  backend:
+
+volumes:
+  shared-logs:
+  shared-config:

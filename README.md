@@ -1,11 +1,11 @@
-# OTEL Python Example Application
-This repository contains an example Python application instrumented with OpenTelemetry (OTEL) and configured to export telemetry data to Observe. The application is designed to demonstrate how to set up OTEL in a Python environment and deploy it using Docker Compose  and/or AWS ECS Fargate.
+# OTEL Python Application Example with Observe
+This repository contains an example Python application instrumented with OpenTelemetry (OTEL) and configured to export telemetry, metrics, and log data to Observe. The application is designed to demonstrate how to set up OTEL in a Python environment and deploy it using Docker Compose and/or AWS ECS Fargate.
  
 ## Features
-* Python application instrumented with OpenTelemetry.
-* Exports traces and metrics to Observe via a sidecar container running the Observe Agent.
+* Python/Redis/MySQL application instrumented with OpenTelemetry.
+* Exports traces, metrics, and logs to Observe via a sidecar container running the [Observe Agent](https://github.com/observeinc/observe-agent).
 * Docker Compose setup for local testing.
-* Terraform module to deploy the application to AWS ECS Fargate.
+* Terraform module to deploy the application to AWS ECS/Fargate.
 
 ## Assumptions/Requirements
 * You have an Observe account and have created an ingest token.

@@ -1,0 +1,41 @@
+{
+  "name": "init",
+  "image": "${image_url}",
+  "cpu": 256,
+  "memory":  512,
+  "essential": false,
+  "entrypoint": [
+    "/opt/site/bin/entrypoint_setup.sh"
+  ],
+  "user": "root",
+  "mountPoints": [
+    {
+      "sourceVolume": "shared-logs",
+      "containerPath": "/mnt/shared-logs",
+      "readOnly": false
+    },
+    {
+      "sourceVolume": "shared-config",
+      "containerPath": "/mnt/shared-config",
+      "readOnly": false
+    }
+  ], 
+  "environment": [
+    {
+      "name": "S3_BUCKET_NAME",
+      "value": "${s3_bucket_name}"
+    },
+    {
+      "name": "S3_BUCKET_KEY",
+      "value": "${s3_bucket_key}"
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+        "awslogs-region": "${awslogs_region}",
+        "awslogs-group": "${awslogs_group}",
+        "awslogs-stream-prefix": "init"
+    }
+  }
+}

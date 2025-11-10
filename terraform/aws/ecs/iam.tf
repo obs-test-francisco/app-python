@@ -1,4 +1,3 @@
-// ...existing code...
 resource "aws_iam_role" "ecs_service" {
   name = "ecs-service-role"
 
@@ -55,11 +54,26 @@ resource "aws_iam_role_policy" "task" {
           "elasticloadbalancing:RegisterTargets",
           "elasticloadbalancing:DeregisterTargets",
           "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeTargetHealth"
+          "elasticloadbalancing:DescribeTargetHealth",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "S3:GetObject",
+          "S3:ListBucket"
+        ]
+        Resource = [
+          "${aws_s3_bucket.shared_config.arn}",
+          "${aws_s3_bucket.shared_config.arn}/*"
+        ]
       }
-    ]
+    ]   
   })
 }
 
@@ -93,8 +107,8 @@ resource "aws_iam_role_policy" "task_execution_passrole" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = ["iam:PassRole"]
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
         Resource = [aws_iam_role.task.arn]
       }
     ]
@@ -132,6 +146,18 @@ data "aws_iam_policy_document" "task_execution_secrets" {
       "arn:aws:kms:us-west-2:590183861614:key/*"
     ]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    resources = [ "*" ]
+  }
+
 }
 
 resource "aws_iam_role_policy" "task_execution_secrets" {
@@ -139,26 +165,4 @@ resource "aws_iam_role_policy" "task_execution_secrets" {
   role = aws_iam_role.task_execution.id
 
   policy = data.aws_iam_policy_document.task_execution_secrets.json
-  # policy = jsonencode({
-  #   Version = "2012-10-17"
-  #   Statement = [
-  #     {
-  #       Effect = "Allow"
-  #       Action = [
-  #         "secretsmanager:GetSecretValue",
-  #         "ecr:GetAuthorizationToken",
-  #         "ecr:BatchCheckLayerAvailability",
-  #         "ecr:GetDownloadUrlForLayer",
-  #         "ecr:BatchGetImage",
-  #         "kms:Decrypt"
-  #       ]
-  #       Resource = [
-  #         "arn:aws:kms:us-west-2:590183861614:key/b9af2ed6-b543-4d22-902a-bb34d985cb28",
-  #         "arn:aws:ecr:us-west-2:590183861614:repository/*",
-  #         data.aws_secretsmanager_secret.dockerhub.arn,
-  #         data.aws_secretsmanager_secret.observe.arn
-  #       ]
-  #     }
-  #   ]
-  # })
 }

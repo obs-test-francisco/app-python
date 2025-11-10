@@ -8,3 +8,4 @@ __pycache__
 *.env
 environments/field-demo-staging
 *.code-workspace
+.tmuxinator.yaml

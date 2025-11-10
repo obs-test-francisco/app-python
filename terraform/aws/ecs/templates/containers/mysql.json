@@ -1,0 +1,53 @@
+{
+  "name": "db-mysql",
+  "image": "${image_url}",
+  "cpu": 1024,
+  "memory":  2048,
+  "essential": false,
+  "command": ["--default-authentication-plugin=mysql_native_password"],
+  "mountPoints": [
+    {
+      "sourceVolume": "shared-data",
+      "containerPath": "/var/lib/mysql",
+      "readOnly": false
+    }
+  ],    
+  "portMappings": [
+    {
+      "containerPort": 3306,
+      "hostPort": 3306,
+      "protocol" : "tcp"
+    }
+  ],
+  "environment": [
+    {
+      "name": "MYSQL_PASSWORD",
+      "value": "password"
+    },
+    {
+      "name": "MYSQL_USER",
+      "value": "hackweek"
+    },
+    {
+      "name": "MYSQL_DATABASE",
+      "value": "hackweek"
+    },
+    {
+      "name": "MYSQL_HOST",
+      "value": "0.0.0.0"
+    },
+    {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "value": "password"
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+        "awslogs-region": "${awslogs_region}",
+        "awslogs-group": "${awslogs_group}",
+        "awslogs-stream-prefix": "mysql"
+    }
+  }
+}
+  

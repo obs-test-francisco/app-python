@@ -1,0 +1,23 @@
+
+{
+  "name": "db-redis",
+  "image": "${image_url}",
+  "cpu": 1024,
+  "memory":  2048,
+  "essential": false,
+  "portMappings": [
+    {
+      "containerPort": 6379,
+      "hostPort": 6379,
+      "protocol" : "tcp"
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+        "awslogs-region": "${awslogs_region}",
+        "awslogs-group": "${awslogs_group}",
+        "awslogs-stream-prefix": "redis"
+    }
+  }
+}
