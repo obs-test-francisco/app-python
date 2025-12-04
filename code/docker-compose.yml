@@ -10,6 +10,9 @@ services:
     env_file: docker/env-files/otel-python-app.env
     volumes:
       - shared-logs:/mnt/shared/logs:rw
+    depends_on:
+      - db-mysql
+      - db-redis
     networks:
       - backend
     ports:
@@ -43,8 +46,8 @@ services:
       - "14318:4318"
     volumes:
       - ../util/observe-agent.yaml:/etc/observe-agent/observe-agent.yaml
-      - shared-logs:/mnt/shared/
-    depends_on: 
+      - shared-logs:/mnt/shared/logs
+    depends_on:
       - app
 
 networks:

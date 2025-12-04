@@ -63,11 +63,7 @@
     },
     {
       "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
-      "value": "http://127.0.0.1:4318"
-    },
-    {
-      "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
-      "value": "http/protobuf"
+      "value": "http://127.0.0.1:4318/v1/traces"
     },
     {
       "name": "OTEL_TRACES_EXPORTER",
@@ -76,6 +72,10 @@
     {
       "name": "OTEL_METRICS_EXPORTER",
       "value": "otlp"
+    },
+    {
+      "name": "OTEL_RESOURCE_ATTRIBUTES",
+      "value": "service.name=otel-python-app,service.version=${image_version},deployment.environment.name=ecs-dev"
     },
     {
       "name": "OTEL_NODE_RESOURCE_DETECTORS",
@@ -87,7 +87,7 @@
     },
     {
       "name": "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
-      "value": "delta"
+      "value": "DELTA"
     }
   ],
   "logConfiguration": {

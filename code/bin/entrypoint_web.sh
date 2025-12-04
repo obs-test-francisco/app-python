@@ -9,7 +9,6 @@ CMD="opentelemetry-instrument \
     --traces_exporter console,otlp \
     --metrics_exporter console,otlp \
     --logs_exporter console,otlp \
-    --service_name otel-python-app \
     flask --app app run -h 0.0.0.0 -p ${FLASK_PORT}"
 
 sigterm() {
