@@ -45,7 +45,7 @@ services:
       - "14317:4317"
       - "14318:4318"
     volumes:
-      - ../util/observe-agent.yaml:/etc/observe-agent/observe-agent.yaml
+      - ../util/observe-agent.yaml:/etc/observe-agent/observe-agent-local.yaml
       - shared-logs:/mnt/shared/logs
     depends_on:
       - app
