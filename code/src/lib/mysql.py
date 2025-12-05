@@ -4,6 +4,7 @@ import pymysql.cursors
 
 from dataclasses import dataclass
 from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("otel-python-app")
@@ -21,19 +22,26 @@ class MySQLConfig(object):
 
 @tracer.start_as_current_span("get-mysql-connection")
 def get_mysql_connection(config: MySQLConfig) -> pymysql.Connection:
+    span = trace.get_current_span()
     try:
-        return pymysql.connect(host=config.host,
+        return pymysql.Connect(host=config.host,
                                user=config.user,
                                password=config.password,
-                               db=config.db,
+                               database=config.db,
                                port=3306,
-                               cursorclass=pymysql.cursors.DictCursor)
+                               cursorclass=pymysql.cursors.DictCursor
+            
+        )
     except Exception as e:
-        raise f'CONNECTION FAILED: {e}: {config.host}:{config.port}'
+        err = Exception(f'CONNECTION FAILED: {e}: {config.host}:{config.port}')
+        span.set_status(Status(StatusCode.ERROR))
+        span.record_exception(err)
+        raise err
 
 
 @tracer.start_as_current_span("mysql-status")
 def mysql_status() -> dict:
+    span = trace.get_current_span()
     config = MySQLConfig()
     connection = get_mysql_connection(config)
     status = {
@@ -44,6 +52,7 @@ def mysql_status() -> dict:
         "db": config.db,
     }
     if not connection.open:
+        span.set_status(Status(StatusCode.ERROR))
         status['status'] = 'FAILED'
 
     return status

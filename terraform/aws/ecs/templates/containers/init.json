@@ -1,11 +1,13 @@
 {
   "name": "init",
-  "image": "${image_url}",
-  "cpu": 256,
-  "memory":  512,
+  "image": "alpine:latest",
+  "cpu": 128,
+  "memory":  256,
   "essential": false,
-  "entrypoint": [
-    "/opt/site/bin/entrypoint_setup.sh"
+  "command": [
+    "sh",
+    "-c",
+    "set -euo pipefail; apk add -q --no-cache aws-cli; mkdir -p /mnt/shared-config/; mkdir -p /mnt/shared-logs/logs; aws s3 cp s3://${s3_bucket_name}/${s3_bucket_key} /mnt/shared-config/observe-agent.yaml; chmod 0644 /mnt/shared-config/observe-agent.yaml; chmod -R 0777 /mnt/shared-logs /mnt/shared-config; echo \"Init Completed\"; exit 0"
   ],
   "user": "root",
   "mountPoints": [
@@ -20,16 +22,6 @@
       "readOnly": false
     }
   ], 
-  "environment": [
-    {
-      "name": "S3_BUCKET_NAME",
-      "value": "${s3_bucket_name}"
-    },
-    {
-      "name": "S3_BUCKET_KEY",
-      "value": "${s3_bucket_key}"
-    }
-  ],
   "logConfiguration": {
     "logDriver": "awslogs",
     "options": {

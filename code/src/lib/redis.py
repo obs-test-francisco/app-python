@@ -4,6 +4,7 @@ import logging
 
 from dataclasses import dataclass
 from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode, SpanKind
 
 tracer = trace.get_tracer("otel-python-app")
 
@@ -19,7 +20,7 @@ class RedisConfig(object):
             self.port = self.url.split(":")[2].split("/")[0]
             self.db = self.url.split('/')[3]
         else:
-            raise AttributeError("Must create RedisConfig object with a vali")
+            raise AttributeError("Must create RedisConfig object with a valid")
 
 
 class RedisClient:
@@ -43,12 +44,15 @@ class RedisClient:
         return None
 
 
-@tracer.start_as_current_span("get-redis-client")
 def get_redis_client(config: RedisConfig) -> redis.Redis:
-    try:
-        return redis.from_url(url=config.url)
-    except Exception as e:
-        raise Exception(f'CONNECTION FAILED: {e}: {config.url}')
+    with tracer.start_as_current_span(name="get-redis-client", kind=SpanKind.INTERNAL) as span:
+        try:
+            return redis.from_url(url=config.url)
+        except Exception as e:
+            err = Exception(f'CONNECTION FAILED: {e}: {config.url}')
+            span.set_status(Status(StatusCode.ERROR))
+            span.record_exception(err)
+            raise err
 
 
 @tracer.start_as_current_span("redis-status")

@@ -43,7 +43,6 @@ resource "aws_ecs_task_definition" "otel_combined" {
     init = templatefile("${path.module}/templates/containers/init.json", {
       awslogs_region = data.aws_region.current.region
       awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
-      image_url = local.image_url.app
       s3_bucket_key = aws_s3_object.observe_agent_config.key
       s3_bucket_name = aws_s3_bucket.shared_config.id
     })
@@ -51,6 +50,7 @@ resource "aws_ecs_task_definition" "otel_combined" {
       awslogs_region = data.aws_region.current.region
       awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
       image_url = local.image_url.app
+      image_version = var.image_version
     })
     agent = templatefile("${path.module}/templates/containers/observe-agent.json", {
       awslogs_region = data.aws_region.current.region
