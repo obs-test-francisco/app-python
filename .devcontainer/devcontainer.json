@@ -1,0 +1,23 @@
+{
+  "name": "otel-python-app",
+  "build":{
+    "dockerfile": "../app/Dockerfile",
+    "target": "dev"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.debugpy",
+        "ms-azuretools.vscode-docker",
+        "HashiCorp.terraform"
+      ],
+      "settings": {}
+    }
+  },
+  "workspaceMount": "source=./,target=/app,type=bind",
+  "workspaceFolder": "/app",
+  "runArgs": []
+}

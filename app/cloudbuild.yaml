@@ -1,0 +1,7 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '--target', 'base', '-f', 'Dockerfile', '-t', 'us-west1-docker.pkg.dev/francisco-476421/otel-python-app/otel-python-app:latest', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-west1-docker.pkg.dev/francisco-476421/otel-python-app/otel-python-app:latest']
+images:
+  - 'us-west1-docker.pkg.dev/francisco-476421/otel-python-app/otel-python-app:latest'
