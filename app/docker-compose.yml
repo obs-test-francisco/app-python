@@ -7,7 +7,7 @@ services:
       platforms:
         - linux/amd64
         - linux/arm64
-    env_file: docker/env-files/otel-python-app.env
+    env_file: ../tools/docker/env-files/otel-python-app.env
     volumes:
       - shared-logs:/mnt/shared/logs:rw
     depends_on:
@@ -30,7 +30,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     env_file: docker/env-files/mysql.env
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ../data/mysql:/var/lib/mysql
     networks:
       - backend
     ports:
@@ -38,14 +38,14 @@ services:
 
   observe-agent:
     image: observeinc/observe-agent:2.9.1
-    env_file: docker/env-files/observe-agent.env
+    env_file: ../tools/docker/env-files/observe-agent.env
     networks:
       - backend
     ports: 
       - "14317:4317"
       - "14318:4318"
     volumes:
-      - ../util/observe-agent.yaml:/etc/observe-agent/observe-agent-local.yaml
+      - ../tools/observe-agent/observe-agent.yaml:/etc/observe-agent/observe-agent-local.yaml
       - shared-logs:/mnt/shared/logs
     depends_on:
       - app

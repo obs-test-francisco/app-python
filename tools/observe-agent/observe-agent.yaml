@@ -14,11 +14,6 @@ forwarding:
   metrics:
     output_format: otel
 
-resource_attributes:
-  service.name: ${OTEL_SERVICE_NAME}
-  service.version: ${OTEL_SERVICE_VERSION}
-  deployment.environment.name: ${OTEL_SERVICE_ENVIRONMENT}
-
 otel_config_overrides:
   receivers:
     otlp:
@@ -54,29 +49,16 @@ otel_config_overrides:
           value: ${OTEL_SERVICE_VERSION}
           action: insert
 
-  exporters:
-    otlphttp/observelogs:
-      endpoint: "${OBSERVE_URL}/v2/otel"
-      headers:
-        authorization: "Bearer ${TOKEN}"
-        x-observe-target-package: "Host Explorer"
-      sending_queue:
-        num_consumers: 4
-        queue_size: 100
-      retry_on_failure:
-        enabled: true
-      compression: zstd
-
   service:
     pipelines:
-      logs:
+      logs/ecs:
         receivers: 
           - filelog
         processors: 
           - batch
           - resource
         exporters: 
-          - otlphttp/observelogs
+          - otlphttp/observe
       
       # Comment out locally
       metrics/ecs_fargate:

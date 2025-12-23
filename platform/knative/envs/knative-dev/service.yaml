@@ -1,0 +1,195 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: app-stack
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "1"
+    spec:
+      containers:
+        # -------- App (ingress container) --------
+        - name: app
+          image: obsfrancisco/otel-python-app:v0.47.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: FLASK_APP
+              value: "app"
+            - name: FLASK_PORT
+              value: "8000"
+            - name: LOGS_DIR
+              value: "/mnt/shared/logs"
+
+            # Internal DB endpoints (localhost because they are sidecars)
+            - name: MYSQL_HOST
+              value: "127.0.0.1"
+            - name: MYSQL_USER
+              value: "hackweek"
+            - name: MYSQL_PASSWORD
+              value: "password"
+            - name: MYSQL_DATABASE
+              value: "hackweek"
+
+            - name: REDIS_URL
+              value: "redis://127.0.0.1:6379/0"
+
+            # Internal observe-agent OTLP endpoints (localhost because sidecar)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://127.0.0.1:4318/v1/traces"
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: "http://127.0.0.1:4318/v1/traces"
+            - name: OTEL_EXPORTER_OTLP_TRACES_INSECURE
+              value: "true"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=otel-python-app,service.version=v0.47.0,deployment.environment.name=knative-dev"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"
+            - name: OTEL_NODE_RESOURCE_DETECTORS
+              value: "env,host,os,serviceinstance"
+            - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+              value: "DELTA"
+          volumeMounts:
+            - name: shared-logs
+              mountPath: /mnt/shared/logs
+
+        # -------- Redis sidecar --------
+        - name: db-redis
+          image: redis:6.2-alpine
+
+
+        # -------- MySQL sidecar --------
+        - name: db-mysql
+          image: mysql:8.0.44
+          args:
+            - "--default-authentication-plugin=mysql_native_password"
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_unicode_ci"
+          env:
+            # These mirror typical mysql.env usage (adjust to match your file)
+            - name: MYSQL_DATABASE
+              value: "hackweek"
+            - name: MYSQL_USER
+              value: "hackweek"
+            - name: MYSQL_PASSWORD
+              value: "password"
+            # Required by the official mysql image unless you use allow-empty-password (not recommended)
+            - name: MYSQL_ROOT_PASSWORD
+              value: "password"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+
+        # -------- Observe Agent sidecar --------
+        - name: observe-agent
+          image: observeinc/observe-agent:2.9.1
+          # Mount the config file into the container
+          volumeMounts:
+            # - name: observe-agent-config
+            #   mountPath: /etc/observe-agent/
+            #   subPath: observe-agent.yaml
+            - name: shared-logs
+              mountPath: /mnt/shared/logs
+          env:
+            # Your docker/env-files/observe-agent.env values should go here.
+            # Recommended: use envFrom with a Secret/ConfigMap instead of inlining.
+            # - name: OBSERVE_...
+            #   value: "..."
+            - name: OBSERVE_URL
+              value: "https://169096891327.collect.observeinc.com"
+            - name: TOKEN
+              value: "ds1BbXNaMtaBVCPz17zQ:F4d1YTDEw3TKUya3fcRz0AQNK_21B5SL"
+            - name: HOST_MONITORING::ENABLED
+              value: "false"
+            - name: HOST_MONITORING::LOGS::ENABLED
+              value: "false"
+            - name: RESOURCE_ATTRIBUTES::SERVICE.NAME
+              value: "otel-python-app"
+            - name: RESOURCE_ATTRIBUTES::SERVICE.VERSION
+              value: "v0.47.0"
+            - name: RESOURCE_ATTRIBUTES::DEPLOYMENT.ENVIRONMENT.NAME
+              value: "knative-dev"
+            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::OTLP::PROTOCOLS::GRPC::ENDPOINT
+              value: "0.0.0.0:4317"
+            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::OTLP::PROTOCOLS::HTTP::ENDPOINT
+              value: "0.0.0.0:4318"
+            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::INCLUDE
+              value: "[ /mnt/shared/logs/*.json ]"
+            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::OPERATORS::TYPE
+              value: "json_parser"
+            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::OPERATORS::TIMESTAMP::PARSE_FROM
+              value: "attributes.asctime"
+            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::OPERATORS::TIMESTAMP::LAYOUT
+              value: "'%Y-%m-%d %H:%M:%S,%f'"
+            - name: OTEL_CONFIG_OVERRIDES::PROCESSORS::BATCH
+              value: ""
+
+      volumes:
+        # shared-logs from docker-compose => emptyDir for dev/demo
+        - name: shared-logs
+          emptyDir: {}
+
+        # mysql volume from docker-compose => emptyDir (ephemeral). For persistence use a PVC instead.
+        - name: mysql-data
+          emptyDir: {}
+
+        # observe-agent.yaml from docker-compose => ConfigMap-provided file
+        # - name: observe-agent-config
+        #   configMap:
+        #     name: observe-agent-config
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: observe-agent-config
+# data:
+#   observe-agent.yaml: |
+#     otel_config_overrides:
+#       processors:
+#         resource:
+#           attributes:
+#             - key: service.name
+#               value: otel-python-app
+#               action: insert
+#             - key: deployment.environment.name
+#               value: knative-dev
+#               action: insert
+#             - key: service.version
+#               value: v0.47.0
+#               action: insert
+
+#       exporters:
+#         otlphttp/observelogs:
+#           endpoint: "https://169096891327.collect.observeinc.com//v2/otel"
+#           headers:
+#             authorization: "Bearer ds1Ls2TyVZklsOtlTBZZ:fInxUyHs5BLgyVjNHKVhxq0ZFoD5Ab2N"
+#             x-observe-target-package: "Host Explorer"
+#           sending_queue:
+#             num_consumers: 4
+#             queue_size: 100
+#           retry_on_failure:
+#             enabled: true
+#           compression: zstd
+
+#       service:
+#         pipelines:
+#           logs:
+#             receivers: 
+#               - filelog
+#             processors: 
+#               - batch
+#               - resource
+#             exporters: 
+#               - otlphttp/observelogs
+
+#           metrics/host_monitoring:
+#             receivers: [hostmetrics/host-monitoring-host]
+#             processors: [memory_limiter]
+#             exporters: [debug]      
+      
