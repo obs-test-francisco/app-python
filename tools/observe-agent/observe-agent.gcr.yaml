@@ -1,0 +1,50 @@
+token: "${OBSERVE_TOKEN}"
+
+observe_url: "${OBSERVE_URL}"
+            
+host_monitoring:
+  enabled: true
+  logs:
+    enabled: true
+    include: 
+      - /mnt/shared/logs/*.json
+
+forwarding:
+  enabled: true
+  metrics:
+    output_format: otel
+  endpoints:
+    grpc: 0.0.0.0:4317
+    http: 0.0.0.0:4318
+
+resource_attributes:
+  service.name: ${OBSERVE_OTEL_SERVICE_NAME}               # e.g. "my-app"
+  service.version: ${OBSERVE_OTEL_SERVICE_VERSION}         # e.g. "v.1.0"
+  deployment.environment.name: ${OBSERVE_OTEL_SERVICE_ENVIRONMENT} # e.g. "dev"
+
+otel_config_overrides:
+  receivers:
+    filelog/host_monitoring:
+      operators:
+        - type: json_parser
+          timestamp:
+            parse_from: attributes.asctime
+            layout: "%Y-%m-%d %H:%M:%S,%f"
+
+  processors:
+    resourcedetection/gcp:
+      detectors: [env, gcp]
+      timeout: 2s
+      override: false
+
+  service:
+    pipelines:
+      traces/gcp:
+        receivers: [otlp]
+        processors: [memory_limiter, resourcedetection, resourcedetection/gcp, batch]
+        exporters: [otlphttp/observe]      
+
+      metrics/gcp:
+        receivers: [otlp]
+        processors: [memory_limiter, resourcedetection, resourcedetection/gcp, batch]
+        exporters: [otlphttp/observemetrics]      

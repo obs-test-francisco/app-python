@@ -20,12 +20,12 @@ resource "aws_s3_object" "observe_agent_config" {
   bucket = aws_s3_bucket.shared_config.id
   key    = "observe-agent/observe-agent.yaml"
 
-  etag   = filemd5("${path.module}/../../../util/observe-agent.yaml")
-  content = templatefile("${path.module}/../../../util/observe-agent.yaml", {
-    OBSERVE_URL = jsondecode(data.aws_secretsmanager_secret_version.observe.secret_string).OBSERVE_URL
-    TOKEN      = jsondecode(data.aws_secretsmanager_secret_version.observe.secret_string).OBSERVE_TOKEN
-    OTEL_SERVICE_NAME        = var.image_name
-    OTEL_SERVICE_VERSION     = var.image_version
-    OTEL_SERVICE_ENVIRONMENT = var.environment_name
+  etag = filemd5("${path.module}/../../../../tools/observe-agent/observe-agent.ecs.yaml")
+  content = templatefile("${path.module}/../../../../tools/observe-agent/observe-agent.ecs.yaml", {
+    OBSERVE_URL                      = jsondecode(data.aws_secretsmanager_secret_version.observe.secret_string).OBSERVE_URL
+    OBSERVE_TOKEN                    = jsondecode(data.aws_secretsmanager_secret_version.observe.secret_string).OBSERVE_TOKEN
+    OBSERVE_OTEL_SERVICE_NAME        = var.image_name
+    OBSERVE_OTEL_SERVICE_VERSION     = var.image_version
+    OBSERVE_OTEL_SERVICE_ENVIRONMENT = var.environment_name
   })
 }

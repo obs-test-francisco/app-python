@@ -12,10 +12,12 @@ spec:
       containers:
         # -------- App (ingress container) --------
         - name: app
-          image: obsfrancisco/otel-python-app:v0.47.0
+          image: obsfrancisco/otel-python-app:v0.50.6
           ports:
             - containerPort: 8000
           env:
+            - name: APP_EXPIRE_LOCK
+              value: "true"
             - name: FLASK_APP
               value: "app"
             - name: FLASK_PORT
@@ -96,39 +98,11 @@ spec:
             #   subPath: observe-agent.yaml
             - name: shared-logs
               mountPath: /mnt/shared/logs
-          env:
+          # env:
             # Your docker/env-files/observe-agent.env values should go here.
             # Recommended: use envFrom with a Secret/ConfigMap instead of inlining.
             # - name: OBSERVE_...
             #   value: "..."
-            - name: OBSERVE_URL
-              value: "https://169096891327.collect.observeinc.com"
-            - name: TOKEN
-              value: "ds1BbXNaMtaBVCPz17zQ:F4d1YTDEw3TKUya3fcRz0AQNK_21B5SL"
-            - name: HOST_MONITORING::ENABLED
-              value: "false"
-            - name: HOST_MONITORING::LOGS::ENABLED
-              value: "false"
-            - name: RESOURCE_ATTRIBUTES::SERVICE.NAME
-              value: "otel-python-app"
-            - name: RESOURCE_ATTRIBUTES::SERVICE.VERSION
-              value: "v0.47.0"
-            - name: RESOURCE_ATTRIBUTES::DEPLOYMENT.ENVIRONMENT.NAME
-              value: "knative-dev"
-            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::OTLP::PROTOCOLS::GRPC::ENDPOINT
-              value: "0.0.0.0:4317"
-            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::OTLP::PROTOCOLS::HTTP::ENDPOINT
-              value: "0.0.0.0:4318"
-            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::INCLUDE
-              value: "[ /mnt/shared/logs/*.json ]"
-            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::OPERATORS::TYPE
-              value: "json_parser"
-            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::OPERATORS::TIMESTAMP::PARSE_FROM
-              value: "attributes.asctime"
-            - name: OTEL_CONFIG_OVERRIDES::RECEIVERS::FILELOG::OPERATORS::TIMESTAMP::LAYOUT
-              value: "'%Y-%m-%d %H:%M:%S,%f'"
-            - name: OTEL_CONFIG_OVERRIDES::PROCESSORS::BATCH
-              value: ""
 
       volumes:
         # shared-logs from docker-compose => emptyDir for dev/demo

@@ -5,17 +5,19 @@ import logging
 from flask import Flask
 from logging.config import dictConfig
 
+from opentelemetry.trace import SpanKind
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
-
-from .lib.redis import redis_status, RedisClient
-from .lib.mysql import mysql_status, populate_initial_data
-from .lib.users import UserController
-from .lib.util import serialize_users
-from .lib.otel import setup_tracer
+from lib.users import UserController
+from lib.cache import Client as RedisClient
+from lib.db import Client as MySQLClient
+from lib.util import serialize_users
+from lib.otel import setup_tracer
 
 logfile_dir = os.environ.get("LOGS_DIR", "/mnt/shared/logs")
 tracer = setup_tracer()
+expire_lock = os.getenv("APP_EXPIRE_LOCK", False)
+
 
 dictConfig({
     'version': 1,
@@ -51,11 +53,24 @@ dictConfig({
         'handlers': ['console', 'fileHandler']
     }
 })
+logger = logging.getLogger(__name__)
+
+db_client = MySQLClient()
+cache_client = RedisClient()
+
+if expire_lock:
+    cache_client.unlock()
+
+if not cache_client.has_lock():
+    # App is not locked, populate DB
+    db_client.populate_data()
+    # Lock further population attempts
+    cache_client.lock()
+
 
 app = Flask(__name__)
-FlaskInstrumentor().instrument_app(app, excluded_urls="/healthz")
+FlaskInstrumentor().instrument_app(app)
 
-@app.route("/")
 def index() -> str:
     return 'hello '
 
@@ -63,32 +78,28 @@ def index() -> str:
 @app.route("/healthz")
 def status() -> str:
     result = {
-        "mysql": mysql_status(),
-        "redis": redis_status()
+        "mysql": db_client.status(),
+        "redis": cache_client.status()
     }
     return json.dumps(result)
 
 
 @app.route("/users")
 def get_users() -> str:
-    ctlr = UserController(logger=app.logger)
+    ctlr = UserController(
+        logger=app.logger,
+        db_client=db_client,
+        cache_client=cache_client
+    )
     app.logger.info(f'Getting users from controller: {ctlr}')
     users = ctlr.get_users()
     app.logger.info(f'Getting users from controller: {users} ')
     return serialize_users(users)
-
 
 @app.route("/flush")
 def flush_redis() -> dict:
     r = RedisClient()
     r.delete_key('users')
     return {
-        'status': 'OK',
+        'status': 'FLUSHED',
     }
-
-
-@app.route("/init")
-def init_data() -> str:
-    data = populate_initial_data()
-    return json.dumps(data)
-

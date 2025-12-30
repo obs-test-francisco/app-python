@@ -6,16 +6,29 @@ services:
       platforms:
         - linux/amd64
         - linux/arm64
+      target: dev
     env_file: ./tools/docker/env-files/otel-python-app.env
     volumes:
+      - ./app/src:/opt/site/code
       - shared-logs:/mnt/shared/logs:rw
     depends_on:
       - db-mysql
       - db-redis
+      - init
     networks:
       - backend
     ports:
       - "8000:8000"
+      - "5678:5678"
+
+  init:
+    image: alpine:latest
+    command:
+      - "sh"
+      - "-c"
+      - "set -euo pipefail; mkdir -p /mnt/shared-logs/logs; chmod -R 0777 /mnt/shared-logs; echo \"Init Completed\"; exit 0"
+    volumes:
+      - shared-logs:/mnt/shared-logs:rw
 
   db-redis:
     image: "redis:6.2-alpine"
@@ -44,10 +57,11 @@ services:
       - "14317:4317"
       - "14318:4318"
     volumes:
-      - ./tools/observe-agent/observe-agent.yaml:/etc/observe-agent/observe-agent-local.yaml
+      - ./tools/observe-agent/observe-agent.compose.yaml:/etc/observe-agent/observe-agent.yaml
       - shared-logs:/mnt/shared/logs
     depends_on:
       - app
+      - init
 
 networks:
   backend:

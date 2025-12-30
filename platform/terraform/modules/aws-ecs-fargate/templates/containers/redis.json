@@ -11,6 +11,16 @@
       "protocol" : "tcp"
     }
   ],
+  "healthCheck": {
+    "command": [
+      "CMD-SHELL",
+      "redis-cli -h 127.0.0.1 -p 6379 ping | grep -q PONG"
+    ],
+    "interval": 10,
+    "timeout": 5,
+    "retries": 5,
+    "startPeriod": 10
+  },
   "logConfiguration": {
     "logDriver": "awslogs",
     "options": {
