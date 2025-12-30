@@ -119,5 +119,5 @@ spec:
           secret:
             secretName: 'OBSERVE'          
             items:
-              - key: "4"
+              - key: "5"
                 path: observe-agent.yaml
