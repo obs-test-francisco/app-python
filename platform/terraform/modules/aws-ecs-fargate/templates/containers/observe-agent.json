@@ -22,6 +22,20 @@
       "condition": "SUCCESS"
     }
   ],
+  "environment": [
+    {
+      "name": "OBSERVE_OTEL_SERVICE_NAME",
+      "value": "otel-python-app"
+    },
+    {
+      "name": "OBSERVE_OTEL_SERVICE_VERSION",
+      "value": "${image_version}"
+    },
+    {
+      "name": "OBSERVE_OTEL_SERVICE_ENVIRONMENT",
+      "value": "ecs-dev"
+    }
+  ],
   "portMappings": [
     {
       "containerPort": 4317,

@@ -1,0 +1,20 @@
+services:
+  app:
+    volumes:
+      # mount the whole repo so VS Code opens everything
+      - ..:/workspace:cached
+
+      # keep your existing named volume
+      - shared-logs:/mnt/shared/logs:rw
+
+    working_dir: /workspace/app
+
+    # optional: if your image doesn't already run flask, force it for dev
+    # command: flask --app app run --host 0.0.0.0 --port 8000 --debug
+    entrypoint:
+      - "/opt/site/bin/entrypoint_debug.sh"
+
+    environment:
+      # optional convenience; your env_file already sets these
+      FLASK_APP: app
+      FLASK_PORT: "8000"

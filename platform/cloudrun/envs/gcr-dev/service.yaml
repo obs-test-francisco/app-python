@@ -14,10 +14,12 @@ spec:
       containers:
         # -------- App (ingress container) --------
         - name: app
-          image: us-west1-docker.pkg.dev/francisco-476421/otel-python-app/otel-python-app:latest
+          image: us-west1-docker.pkg.dev/francisco-476421/otel-python-app/otel-python-app:v0.50.6
           ports:
             - containerPort: 8000
           env:
+            - name: APP_EXPIRE_LOCK
+              value: "true"
             - name: FLASK_APP
               value: "app"
             - name: FLASK_PORT
@@ -46,7 +48,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_TRACES_INSECURE
               value: "true"
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "service.name=otel-python-app,service.version=v0.47.0,deployment.environment.name=gcr-dev"
+              value: "service.name=otel-python-app,service.version=v0.50.6,deployment.environment.name=gcr-dev"
             - name: OTEL_TRACES_EXPORTER
               value: "otlp"
             - name: OTEL_METRICS_EXPORTER
@@ -117,5 +119,5 @@ spec:
           secret:
             secretName: 'OBSERVE'          
             items:
-              - key: "3"
+              - key: "4"
                 path: observe-agent.yaml

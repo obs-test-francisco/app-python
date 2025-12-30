@@ -13,7 +13,6 @@ variable "image_url" {
 variable "image_version" {
   description = "The version of the Docker image to use for the application"
   type        = string
-  default     = "v0.46.0"
 }
 
 variable "environment_name" {

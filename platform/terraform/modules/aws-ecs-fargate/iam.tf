@@ -73,7 +73,7 @@ resource "aws_iam_role_policy" "task" {
           "${aws_s3_bucket.shared_config.arn}/*"
         ]
       }
-    ]   
+    ]
   })
 }
 
@@ -155,7 +155,7 @@ data "aws_iam_policy_document" "task_execution_secrets" {
       "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"
     ]
-    resources = [ "*" ]
+    resources = ["*"]
   }
 
 }

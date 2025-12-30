@@ -1,8 +1,8 @@
 {
   "name": "db-mysql",
   "image": "${image_url}",
-  "cpu": 1024,
-  "memory":  2048,
+  "cpu": 256,
+  "memory":  512,
   "essential": false,
   "command": ["--default-authentication-plugin=mysql_native_password"],
   "mountPoints": [
@@ -41,6 +41,16 @@
       "value": "password"
     }
   ],
+  "healthCheck": {
+    "command": [
+      "CMD-SHELL",
+      "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3306' >/dev/null 2>&1 || exit 1"
+    ],
+    "interval": 10,
+    "timeout": 5,
+    "retries": 5,
+    "startPeriod": 60
+  },
   "logConfiguration": {
     "logDriver": "awslogs",
     "options": {

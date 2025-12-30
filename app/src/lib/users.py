@@ -2,13 +2,14 @@ import json
 import logging
 import random
 import time
+import pymysql
 
 from dataclasses import dataclass
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode, SpanKind
 
-from .mysql import get_mysql_connection, MySQLConfig
-from .redis import RedisClient
+from .db import Client as MySQLClient
+from .cache import Client as RedisClient
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("otel-python-app")
@@ -21,17 +22,16 @@ class User(object):
     firstName: str
     lastName: str
 
-    @tracer.start_as_current_span("user-save")
-    def save(self):
-        with tracer.start_as_current_span("save-user", kind=SpanKind.CLIENT) as span:
-            mysql_con = get_mysql_connection(config=MySQLConfig())
-            span.set_attribute("user.id", self.id)
-            span.set_attribute("user.email", self.email)
-            with mysql_con.cursor() as cursor:
-                cursor.execute("UPDATE `users` SET email=%s, firstName=%s, lastName=%s WHERE id=%s",
-                            (self.email, self.firstName, self.lastName, self.id))
-            mysql_con.commit()
-            mysql_con.close()
+    # @tracer.start_as_current_span("user-save")
+    # def save(self, conn: pymysql.Connection):
+    #     with tracer.start_as_current_span("app.users.save-user", kind=SpanKind.CLIENT) as span:
+    #         span.set_attribute("user.id", self.id)
+    #         span.set_attribute("user.email", self.email)
+    #         with conn.cursor() as cursor:
+    #             cursor.execute("UPDATE `users` SET email=%s, firstName=%s, lastName=%s WHERE id=%s",
+    #                         (self.email, self.firstName, self.lastName, self.id))
+    #         conn.commit()
+    #         conn.close()
 
     def __serialize__(self):
         return {
@@ -43,19 +43,33 @@ class User(object):
 
 
 class UserController(object):
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, db_client: MySQLClient, cache_client: RedisClient):
         self.users = []
         self.logger = logger
-        self.mysql = get_mysql_connection(config=MySQLConfig())
-        self.redis = RedisClient()
+        self.db = db_client
+        self.cache = cache_client
 
     def add_user(self, user: User):
-        self.users.append(user)
-
+        with tracer.start_as_current_span("app.users.ctlr.add_user", kind=SpanKind.INTERNAL) as span:
+            self.users.append(user)
+    
+    def get_users(self) -> list[User]:
+        with tracer.start_as_current_span("app.users.ctlr.get_users", kind=SpanKind.CLIENT) as span:
+            self.logger.debug(f'UserController.get_users()')
+            cached_users = self._get_users_redis()
+            self.logger.debug(f'UserController.get_users() cached_users: {cached_users}')
+            if len(cached_users) == 0:
+                users = self._get_users_mysql()
+                self.logger.debug(f'UserController._get_users_mysql() users: {users}')
+                self._cache_users(users)
+            else:
+                users = cached_users
+            return users
+        
     def _get_users_redis(self) -> list[User]:
-        with tracer.start_as_current_span("get-users-redis", kind=SpanKind.CLIENT) as span:
+        with tracer.start_as_current_span("app.users.ctlr.get_users.cache", kind=SpanKind.CLIENT) as span:
             self.logger.debug(f'UserController._get_users_redis()')
-            users = self.redis.get_dict(key='users')
+            users = self.cache.get_dict(key='users')
             self.logger.debug(f'UserController._get_users_redis(): users: {users}')
 
             # Simulate a random error
@@ -72,41 +86,30 @@ class UserController(object):
                 self.logger.debug(f'UserController._get_users_redis(): user_objects: {user_objects}')
             return user_objects
 
-    @tracer.start_as_current_span("get-users-mysql")
     def _get_users_mysql(self) -> list[User]:
-        users = []
-        self.logger.debug(f'UserController._get_users_mysql()')
+        with tracer.start_as_current_span("app.users.ctlr.get_users.db", kind=SpanKind.CLIENT) as span:
+            users = []
+            self.logger.debug(f'UserController._get_users_mysql()')
 
-        # Simulate a slow query
-        time.sleep(2)
-        with self.mysql.cursor() as cursor:
-            cursor.execute("SELECT * FROM `users`")
-            result = cursor.fetchall()
-        self.logger.debug(f'UserController._get_users_mysql() result: {result}')
-        for row in result:
-            users.append(User(id=row['id'], email=row['email'], firstName=row['firstName'], lastName=row['lastName']))
-        return [] if len(users) == 0 else users
+            # Simulate a slow query
+            time.sleep(2)
+            with self.db.conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM `users`")
+                result = cursor.fetchall()
+            self.logger.debug(f'UserController._get_users_mysql() result: {result}')
+            for row in result:
+                users.append(User(id=row['id'], email=row['email'], firstName=row['firstName'], lastName=row['lastName']))
+            return [] if len(users) == 0 else users
 
-    @tracer.start_as_current_span("set-users-redis")
     def _cache_users(self, users: list[User]) -> None:
-        user_dict = {}
-        self.logger.debug(f'UserController._cache_users(): users: {users}')
-        if users is not None:
-            for user in users:
-                user_dict[user.id] = json.dumps(user.__serialize__())
-            self.logger.debug(f'UserController._cache_users(): user_dict: {user_dict}')
-            self.redis.set_dict('users', user_dict)
-        return None
+        with tracer.start_as_current_span("app.users.ctlr.cache_users.cache", kind=SpanKind.CLIENT) as span:
+            user_dict = {}
+            self.logger.debug(f'UserController._cache_users(): users: {users}')
+            if users is not None:
+                for user in users:
+                    user_dict[user.id] = json.dumps(user.__serialize__())
+                self.logger.debug(f'UserController._cache_users(): user_dict: {user_dict}')
+                self.cache.set_dict('users', user_dict)
+            return None
 
-    @tracer.start_as_current_span("get-users")
-    def get_users(self) -> list[User]:
-        self.logger.debug(f'UserController.get_users()')
-        cached_users = self._get_users_redis()
-        self.logger.debug(f'UserController.get_users() cached_users: {cached_users}')
-        if len(cached_users) == 0:
-            users = self._get_users_mysql()
-            self.logger.debug(f'UserController._get_users_mysql() users: {users}')
-            self._cache_users(users)
-        else:
-            users = cached_users
-        return users
+

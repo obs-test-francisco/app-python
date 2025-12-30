@@ -1,6 +1,6 @@
 {
   "name": "init",
-  "image": "alpine:latest",
+  "image": "${image_url}",
   "cpu": 128,
   "memory":  256,
   "essential": false,

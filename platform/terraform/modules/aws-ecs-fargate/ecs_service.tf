@@ -6,7 +6,7 @@ resource "aws_ecs_service" "otel" {
   launch_type                       = "FARGATE"
   force_delete                      = true
   health_check_grace_period_seconds = 20
-  enable_execute_command = true
+  enable_execute_command            = true
 
   network_configuration {
     subnets          = module.vpc.private_subnets
@@ -43,32 +43,34 @@ resource "aws_ecs_task_definition" "otel_combined" {
     init = templatefile("${path.module}/templates/containers/init.json", {
       awslogs_region = data.aws_region.current.region
       awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
-      s3_bucket_key = aws_s3_object.observe_agent_config.key
+      image_url     = local.image_url.init
+      s3_bucket_key  = aws_s3_object.observe_agent_config.key
       s3_bucket_name = aws_s3_bucket.shared_config.id
     })
     app = templatefile("${path.module}/templates/containers/app.json", {
       awslogs_region = data.aws_region.current.region
       awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
-      image_url = local.image_url.app
-      image_version = var.image_version
+      image_url      = local.image_url.app
+      image_version  = var.image_version
     })
     agent = templatefile("${path.module}/templates/containers/observe-agent.json", {
-      awslogs_region = data.aws_region.current.region
-      awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
-      image_url            = local.image_url.agent
-      observe_secrets_arn  = data.aws_secretsmanager_secret.observe.arn
-      observe_url_key       = "OBSERVE_URL"
-      observe_token_key     = "OBSERVE_TOKEN"
+      awslogs_region      = data.aws_region.current.region
+      awslogs_group       = aws_cloudwatch_log_group.ecs_cluster.name
+      image_url           = local.image_url.agent
+      image_version       = var.image_version
+      observe_secrets_arn = data.aws_secretsmanager_secret.observe.arn
+      observe_url_key     = "OBSERVE_URL"
+      observe_token_key   = "OBSERVE_TOKEN"
     })
     redis = templatefile("${path.module}/templates/containers/redis.json", {
       awslogs_region = data.aws_region.current.region
       awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
-      image_url = local.image_url.redis
+      image_url      = local.image_url.redis
     })
     mysql = templatefile("${path.module}/templates/containers/mysql.json", {
       awslogs_region = data.aws_region.current.region
       awslogs_group  = aws_cloudwatch_log_group.ecs_cluster.name
-      image_url = local.image_url.mysql
+      image_url      = local.image_url.mysql
     })
   })
 

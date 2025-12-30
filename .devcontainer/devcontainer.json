@@ -1,9 +1,10 @@
 {
   "name": "otel-python-app",
-  "build":{
-    "dockerfile": "../app/Dockerfile",
-    "target": "dev"
-  },
+  "dockerComposeFile": [
+    "../docker-compose.yaml",
+    "compose.dev.yaml"
+  ],
+  "service": "app",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -14,10 +15,21 @@
         "ms-azuretools.vscode-docker",
         "HashiCorp.terraform"
       ],
-      "settings": {}
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.analysis.extraPaths": ["./app"],
+        "python.testing.unittestEnabled": true,
+        "python.testing.pytestEnabled": false,
+        "python.testing.unittestArgs": ["discover", "-s", "./app/src", "-p", "*_test.py"]
+      }
     }
   },
-  "workspaceMount": "source=./,target=/app,type=bind",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
   "workspaceFolder": "/app",
-  "runArgs": []
+  "postCreateCommand": "pip install debugpy",
+  "runArgs": [
+    "--service-ports"
+  ],
+  "remoteUser": "web",
+  "overrideCommand": false
 }

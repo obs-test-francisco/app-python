@@ -22,9 +22,21 @@
     {
       "containerName": "init",
       "condition": "SUCCESS"
+    },
+    {
+      "containerName": "db-redis",
+      "condition": "HEALTHY"
+    },
+    {
+      "containerName": "db-mysql",
+      "condition": "HEALTHY"
     }
   ],
   "environment": [
+    {
+      "name": "APP_EXPIRE_LOCK",
+      "value": "true"
+    },
     {
       "name": "FLASK_APP",
       "value": "app"
